@@ -71,11 +71,17 @@ li.busy { opacity: .5; }
 #lock button { width: 100%; padding: .65rem; font: inherit; font-weight: 600; cursor: pointer;
                background: var(--accent); color: var(--bg); border: 0; border-radius: .5rem; }
 #lock button:disabled { opacity: .5; cursor: default; }
+#loading { margin: 15vh auto 0; text-align: center; color: var(--muted); }
 #lockerr { margin-top: .7rem; font-size: .85rem; color: var(--danger); min-height: 1.2em; }
 </style>
 </head>
 <body>
 <main>
+  <!-- Shown from the very first paint, before any request has been answered. Without it the
+       page is blank until the server replies -- which, on a cold start from a phone, is seconds
+       of white screen with nothing to say it is working. Replaced by the lock or the files. -->
+  <p id="loading">Opening&hellip;</p>
+
   <!-- The lock screen. Shown instead of everything else until the PIN is accepted; the server
        sends nothing about the room until then, so there is nothing here to peek at. -->
   <form id="lock" hidden>

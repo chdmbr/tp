@@ -31,6 +31,7 @@ const $ = (id) => document.getElementById(id);
 const titleEl = $("title"), subEl = $("sub"), zone = $("zone"), picker = $("picker");
 const tagbox = $("tagbox"), filtersEl = $("filters"), listEl = $("list"), errEl = $("err"), noteEl = $("note");
 const lockEl = $("lock"), roomEl = $("room"), pinEl = $("pin"), unlockEl = $("unlock"), lockErrEl = $("lockerr");
+const loadingEl = $("loading");
 
 let state = { files: [], closed: false, maxFileBytes: 0, closesAt: null, name: "Files" };
 let filter = null;
@@ -94,6 +95,7 @@ async function load() {
   try {
     state = await ask(api);
   } catch (error) {
+    loadingEl.hidden = true;
     if (error.message === "locked") return showLock();
     document.querySelector("main").textContent =
       error.message === "not_found"
@@ -101,6 +103,7 @@ async function load() {
         : "Could not open this room.";
     return;
   }
+  loadingEl.hidden = true;
   lockEl.hidden = true;
   roomEl.hidden = false;
   titleEl.textContent = state.name;
@@ -109,6 +112,7 @@ async function load() {
 }
 
 function showLock() {
+  loadingEl.hidden = true;
   roomEl.hidden = true;
   lockEl.hidden = false;
   document.title = "Locked";
