@@ -2,11 +2,16 @@
 """Eschede term-paper page: one self-contained deck, one minimal index.
 Nothing stored on the device, no external request, content hash on the link.
 
-The shared file box (an upload room on the chat Worker, /home/apps/chat) is linked ONLY if
-room.txt exists next to this script, holding the room URL on one line. That file is gitignored
-and must stay that way: this page is published to a PUBLIC GitHub Pages site, and the room is
-guarded by nothing but the secrecy of its link, so committing it would hand an open upload box
-to the whole internet. With no room.txt the page builds exactly as before, link and all absent.
+The shared file box is published HERE, at /tp/chat/, so the address bar shows this site and not
+the machine that actually stores the files. GitHub Pages cannot accept an upload -- it answers
+405 to a POST -- so the page is static here and talks to the file server in the background. That
+server's address is therefore inside chat/room.js, readable by anyone who opens the page source:
+the address bar is hidden, the host is not. The room's real guard is its PIN.
+
+The page is GENERATED from the room app's own files (/home/apps/chat/public), never hand-copied,
+so the published copy cannot drift from the one the server serves. It is built only if room.txt
+exists next to this script, holding the room URL on one line; without it the existing chat/ is
+left untouched and the link is simply absent from the index.
 """
 import hashlib, pathlib, datetime
 H = pathlib.Path(__file__).parent
@@ -33,7 +38,24 @@ BOX = ('<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="#c08
 
 _room = (H/"room.txt")
 _url = _room.read_text().strip() if _room.exists() else ""
-ROOM = (f'<h2>Shared files</h2>\n<a class="f" href="{_url}"><span class="ic">{BOX}</span>'
+
+if _url:
+    # ".../room/<id>" -> the host that serves the files, and the room's id.
+    _api, _, _id = _url.rstrip("/").partition("/room/")
+    src = pathlib.Path("/home/apps/chat/public")
+    out = H/"chat"
+    out.mkdir(exist_ok=True)
+    # The page and the script, taken from the app itself. Two edits: the script tag becomes a
+    # sibling path (there is no /js/ here), and a config line tells the script which server to
+    # ask, since it can no longer work that out from its own address.
+    page = (src/"room.html").read_text().replace(
+        '<script src="/js/room.js"></script>',
+        f'<script>window.ROOM={{api:"{_api}",id:"{_id}"}}</script>\n<script src="room.js"></script>',
+    )
+    (out/"index.html").write_text(page)
+    (out/"room.js").write_text((src/"js"/"room.js").read_text())
+    _link = "chat/"
+ROOM = (f'<h2>Shared files</h2>\n<a class="f" href="{_link}"><span class="ic">{BOX}</span>'
         '<span class="nm">File box</span><span class="pg">drop &amp; take</span></a>') if _url else ""
 
 DOT = '<svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="5.5" fill="#c08a00"/></svg>'
@@ -52,4 +74,4 @@ boards 1&ndash;9 Chidambar, 10&ndash;18 Akarsh.<br>
 Built {built}. Single file &middot; nothing stored on your device &middot; no external request.
 Arrow keys or click to move; <b>f</b> full screen, <b>e</b> extra notes, <b>d</b> dark.</footer>
 </body></html>""")
-print(f"index.html -> slides.html?v={v}" + (f"  + file box {_url}" if _url else "  (no room.txt: no file box link)"))
+print(f"index.html -> slides.html?v={v}" + (f"  + file box at chat/ (server {_api})" if _url else "  (no room.txt: no file box link)"))
